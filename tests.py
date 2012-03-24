@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 from unittest.case import TestCase
 from hamcrest import *
 from pyquery import PyQuery as pq
@@ -9,11 +11,14 @@ def save_content(user, key, content):
 def add_cms_content(dom, key, user, selector="#cms"):
     d = pq(dom)
     d(selector).text(snippets[(user,key)])
-    return str(d)
+    return unicode(d)
 
 class TestCMS(TestCase):
     def setUp(self):
         save_content(user=None, key="HW", content="Hello World")
+
+    def tearDown(self):
+        snippets = {}
 
     def test_simpliest_case(self):
         dom = "<div id='cms'></div>"
@@ -27,15 +32,8 @@ class TestCMS(TestCase):
 
 
 class TestCMSAcceptance(TestCase):
-    def test_simple_acceptance(self):
-        user = "user_it"
-        user2 = "user_fr"
-
-        save_content(user=user, key="HW", content="Hello World")
-        save_content(user=user, key="BJ", content="Bonjourno")
-        save_content(user=user2, key="BJ", content="Bonjour")
-
-        dom="""<html>
+    def setUp(self):
+        self.dom=u"""<html>
                    <body>
                        <div id="cms">
                        </div>
@@ -44,11 +42,29 @@ class TestCMSAcceptance(TestCase):
                    <body>
                </html>"""
 
-        dom_with_cms = add_cms_content(dom, key="HW", user=user)
+    def tearDown(self):
+        snippets = {}
+
+    def test_simple_acceptance(self):
+        user = "user_it"
+        user2 = "user_fr"
+
+        save_content(user=user, key="HW", content="Hello World")
+        save_content(user=user, key="BJ", content="Bonjourno")
+        save_content(user=user2, key="BJ", content="Bonjour")
+
+        dom_with_cms = add_cms_content(self.dom, key="HW", user=user)
         assert_that("Hello World" in dom_with_cms)
 
         dom_with_cms = add_cms_content(dom_with_cms, key="BJ", user=user, selector="#cms2")
         assert_that("Bonjourno" in dom_with_cms)
 
-        dom_with_cms_fr = add_cms_content(dom_with_cms, key="BJ", user=user2, selector="#cms2")
+        dom_with_cms_fr = add_cms_content(self.dom, key="BJ", user=user2, selector="#cms2")
         assert_that("Bonjour" in dom_with_cms_fr)
+
+    def test_unicode(self):
+        user = "user_da"
+        save_content(user=user, key="HW", content=u"Høj")
+
+        dom_with_cms = add_cms_content(self.dom, key="HW", user=user)
+        assert_that(u"Høj" in dom_with_cms)
