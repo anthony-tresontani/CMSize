@@ -4,7 +4,7 @@ from models import ContentType, Content
 from pyquery import PyQuery as pq
 from jinja2 import Template
 
-def add_cms_contain(user, page=None):
+def add_cms_contents(user, page=None):
     """
     Add the CMS content to the page if the content_selector is in the page.
     """
@@ -13,11 +13,12 @@ def add_cms_contain(user, page=None):
         selector = d(str(content_type.selector))
         if selector:
             contents = [c.content for c in Content.objects.filter(user=user, type=content_type.type)]
-            if content_type.unique and contents:
-                formatted_content = apply_layout(content_type.layout, content=contents[0])
-            else:
-                formatted_content = apply_layout(content_type.layout, contents=contents)
-            selector.append(formatted_content)
+            if contents:
+                if content_type.unique and contents:
+                    formatted_content = apply_layout(content_type.layout, content=contents[0])
+                else:
+                    formatted_content = apply_layout(content_type.layout, contents=contents)
+                selector.append(formatted_content)
     return unicode(d)
 
 def add_content_type(type, user, layout, selector, unique=False):
